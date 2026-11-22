@@ -37,12 +37,20 @@ export default function Particles() {
       gpu.setDataType(THREE.HalfFloatType); // fallback for older devices
     }
 
+    // snow area follows the screen (phones in portrait see a much taller area)
+    const el = gl.domElement;
+    const aspect = (el.clientWidth || window.innerWidth) / (el.clientHeight || window.innerHeight);
+    const camZ = aspect >= 1.35 ? 14 : (14 * 1.35) / aspect;
+    const visH = 2 * Math.tan(THREE.MathUtils.degToRad(25)) * camZ;
+    const boundY = Math.max(9.5, visH / 2 + 1.5);
+    const boundX = Math.max(13, (visH * aspect) / 2 + 2);
+
     const posTex = gpu.createTexture();
     const velTex = gpu.createTexture();
     const pd = posTex.image.data as unknown as Float32Array;
     for (let i = 0; i < COUNT; i++) {
-      pd[i * 4] = (Math.random() - 0.5) * 36;
-      pd[i * 4 + 1] = (Math.random() - 0.5) * 20;
+      pd[i * 4] = (Math.random() - 0.5) * 2 * boundX;
+      pd[i * 4 + 1] = (Math.random() - 0.5) * 2 * boundY;
       pd[i * 4 + 2] = (Math.random() - 0.5) * 18;
       pd[i * 4 + 3] = Math.random(); // per-particle seed
     }
@@ -74,6 +82,8 @@ export default function Particles() {
     const pu = posVar.material.uniforms;
     pu.uDelta = { value: 0.016 };
     pu.uForm = { value: 0 };
+    pu.uBoundX = { value: boundX };
+    pu.uBoundY = { value: boundY };
     pu.tTarget = { value: targets[IDLE_INDEX] };
 
     const err = gpu.init();
@@ -107,6 +117,7 @@ export default function Particles() {
           uAlphaMul: { value: alphaMul },
           uGlow: { value: IDLE_LOOK.glow },
           uSoft: { value: soft ? 1 : 0 },
+          uZoom: { value: camZ / 14 },
         },
         vertexShader: particleVertex,
         fragmentShader: particleFragment,
@@ -188,6 +199,8 @@ export default function Particles() {
     s.offset.lerp(s.goal, 1 - Math.exp(-dt * 4));
 
     const t = clock.elapsedTime;
+    sim.pu.uBoundY.value = Math.max(9.5, vh / 2 + 1.5);
+    sim.pu.uBoundX.value = Math.max(13, vw / 2 + 2);
     sim.vu.uTime.value = t;
     sim.vu.uDelta.value = dt;
     sim.vu.uForm.value = s.form;
@@ -210,6 +223,7 @@ export default function Particles() {
       u.uLevel.value = input.level;
       u.uFlash.value = s.kick;
       u.uPixelRatio.value = gl.getPixelRatio();
+      u.uZoom.value = cam.position.z / 14;
     }
   });
 

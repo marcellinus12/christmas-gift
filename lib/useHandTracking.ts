@@ -8,10 +8,11 @@ const WASM = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.21/wasm'
 const MODEL =
   'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task';
 
-const dist = (a: LM, b: LM) => Math.hypot(a.x - b.x, a.y - b.y);
+const dist = (a: LM, b: LM, ar: number) => Math.hypot((a.x - b.x) * ar, a.y - b.y);
 
 /** Hitung jumlah jari yang terbuka (0-5), tidak bergantung orientasi tangan. */
-export function countFingers(lm: LM[]): number {
+/** `ar` = video width / height (landmarks are normalized per axis, so portrait phone video needs this). */
+export function countFingers(lm: LM[], ar = 1): number {
   const wrist = lm[0];
   let n = 0;
   const pairs: [number, number][] = [
@@ -21,11 +22,11 @@ export function countFingers(lm: LM[]): number {
     [20, 18],
   ];
   for (const [tip, pip] of pairs) {
-    if (dist(lm[tip], wrist) > dist(lm[pip], wrist) * 1.08) n++;
+    if (dist(lm[tip], wrist, ar) > dist(lm[pip], wrist, ar) * 1.08) n++;
   }
   // ibu jari: ujungnya menjauh dari pangkal jari kelingking & dari pangkal telunjuk
-  const palm = dist(lm[0], lm[9]);
-  if (dist(lm[4], lm[17]) > dist(lm[3], lm[17]) * 1.1 && dist(lm[4], lm[5]) > palm * 0.45) n++;
+  const palm = dist(lm[0], lm[9], ar);
+  if (dist(lm[4], lm[17], ar) > dist(lm[3], lm[17], ar) * 1.1 && dist(lm[4], lm[5], ar) > palm * 0.45) n++;
   return n;
 }
 
@@ -88,10 +89,14 @@ export function useHandTracking(
         let candidate = 0;
         let stable = 0;
         let missing = 0;
+        let lastRun = 0;
 
         const loop = () => {
           raf = requestAnimationFrame(loop);
           if (video.readyState < 2 || video.currentTime === lastTime) return;
+          const now = performance.now();
+          if (now - lastRun < 33) return; // ~30 fps keeps phones smooth
+          lastRun = now;
           lastTime = video.currentTime;
 
           const res = hl.detectForVideo(video, performance.now());
@@ -108,7 +113,7 @@ export function useHandTracking(
             input.x = 1 - cx; // mirror
             input.y = cy;
 
-            const n = countFingers(lm);
+            const n = countFingers(lm, video.videoWidth / (video.videoHeight || 1));
             if (n === candidate) stable++;
             else {
               candidate = n;

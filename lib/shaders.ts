@@ -85,6 +85,8 @@ export const positionShader = /* glsl */ `
 uniform float uDelta;
 uniform float uForm;
 uniform sampler2D tTarget;
+uniform float uBoundX;   // half width of the snow area (follows the screen)
+uniform float uBoundY;   // half height of the snow area (follows the screen)
 
 float hash(vec2 p) {
   return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
@@ -99,13 +101,13 @@ void main() {
   float tw = texture2D(tTarget, uv).w;
 
   // salju yang jatuh keluar layar muncul lagi dari atas
-  if ((uForm < 0.6 || tw < 0.5) && pos.y < -9.5) {
-    pos.y = 9.5 + hash(uv + pos.x) * 1.5;
-    pos.x = (hash(uv + pos.y) - 0.5) * 36.0;
+  if ((uForm < 0.6 || tw < 0.5) && pos.y < -uBoundY) {
+    pos.y = uBoundY + hash(uv + pos.x) * 1.5;
+    pos.x = (hash(uv + pos.y) - 0.5) * 2.0 * uBoundX;
     pos.z = (hash(uv * 1.3 + pos.w) - 0.5) * 18.0;
   }
-  if (pos.x > 18.0) pos.x -= 36.0;
-  if (pos.x < -18.0) pos.x += 36.0;
+  if (pos.x > uBoundX) pos.x -= 2.0 * uBoundX;
+  if (pos.x < -uBoundX) pos.x += 2.0 * uBoundX;
 
   gl_FragColor = pos; // w = seed, tetap
 }
@@ -128,6 +130,7 @@ uniform float uFlash;
 uniform float uSizeMul;
 uniform float uAlphaMul;
 uniform float uGlow;
+uniform float uZoom;     // camera distance / 14, keeps point size on narrow screens
 varying vec3 vColor;
 varying float vAlpha;
 
@@ -173,7 +176,7 @@ void main() {
 
   float formSize = uSize * 1.0 * (0.9 + 0.5 * spark + uLevel * 0.3) * (flag > 0.5 ? (0.8 + 0.5 * twinkle) : 1.0);
   float size = mix(uSize * (0.5 + seed * 1.3), formSize, f);
-  gl_PointSize = size * uSizeMul * uPixelRatio * (12.0 / -mv.z);
+  gl_PointSize = size * uSizeMul * uPixelRatio * (12.0 * uZoom / -mv.z);
   vAlpha = 0.6 * uAlphaMul;
 
   gl_Position = projectionMatrix * mv;

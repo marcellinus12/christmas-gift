@@ -23,7 +23,7 @@ html, body {
   overflow: hidden;
 }
 
-.stage { position: fixed; inset: 0; }
+.stage { position: fixed; inset: 0; touch-action: none; }
 .stage canvas { display: block; }
 
 .vignette {
