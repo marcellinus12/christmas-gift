@@ -1,0 +1,195 @@
+:root {
+  --night: #050816;
+  --snow: #eaf3ff;
+  --snow-dim: rgba(234, 243, 255, 0.62);
+  --gold: #ffd166;
+  --berry: #e8405a;
+  --pine: #35c27a;
+  --glass: rgba(10, 16, 40, 0.55);
+  --line: rgba(234, 243, 255, 0.16);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  touch-action: none;
+  overscroll-behavior: none;
+  margin: 0;
+  height: 100%;
+  background: var(--night);
+  color: var(--snow);
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  overflow: hidden;
+}
+
+.stage { position: fixed; inset: 0; }
+.stage canvas { display: block; }
+
+.vignette {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at 50% 120%, rgba(232, 64, 90, 0.14), transparent 55%),
+    radial-gradient(ellipse at center, transparent 55%, rgba(2, 4, 14, 0.7) 100%);
+}
+
+.top {
+  position: fixed;
+  top: max(20px, env(safe-area-inset-top));
+  left: 24px;
+  right: 24px;
+  pointer-events: none;
+}
+
+.top h1 {
+  margin: 0;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-style: italic;
+  font-weight: 700;
+  font-size: clamp(1.6rem, 4.2vw, 2.8rem);
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+}
+
+.top p {
+  margin: 6px 0 0;
+  max-width: 34ch;
+  color: var(--snow-dim);
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
+.center {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+
+.cta {
+  pointer-events: auto;
+  appearance: none;
+  border: 1px solid var(--gold);
+  background: rgba(255, 209, 102, 0.12);
+  color: var(--gold);
+  font: inherit;
+  font-weight: 600;
+  font-size: 1.05rem;
+  padding: 14px 26px;
+  border-radius: 999px;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition: background 0.2s, transform 0.2s;
+}
+.cta:hover { background: rgba(255, 209, 102, 0.24); }
+.cta:active { transform: scale(0.97); }
+.cta:focus-visible, .chip:focus-visible { outline: 2px solid var(--snow); outline-offset: 3px; }
+
+.note {
+  margin-top: 12px;
+  text-align: center;
+  color: var(--snow-dim);
+  font-size: 0.85rem;
+  max-width: 30ch;
+}
+.note.err { color: #ff9aa8; }
+
+.dock {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: max(16px, env(safe-area-inset-bottom));
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 0 16px;
+}
+
+.chip {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px 8px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--glass);
+  backdrop-filter: blur(10px);
+  color: var(--snow);
+  font: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+}
+.chip .n {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(234, 243, 255, 0.12);
+  font-weight: 700;
+  font-size: 0.8rem;
+}
+.chip.on { border-color: var(--gold); background: rgba(255, 209, 102, 0.16); }
+.chip.on .n { background: var(--gold); color: var(--night); }
+.chip .em { font-size: 1.1rem; }
+
+.cam {
+  position: fixed;
+  right: 16px;
+  top: max(20px, env(safe-area-inset-top));
+  width: 132px;
+  aspect-ratio: 4 / 3;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  background: #000;
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+.cam.on { opacity: 0.9; }
+.cam video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); display: block; }
+
+@media (max-width: 640px) {
+  .chip .label { display: none; }
+  .chip { padding: 8px 12px 8px 8px; }
+  .cam { width: 96px; }
+  .top p { max-width: 24ch; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cta, .chip, .cam { transition: none; }
+}
+
+.music {
+  appearance: none;
+  position: fixed;
+  left: 16px;
+  top: auto;
+  bottom: calc(max(16px, env(safe-area-inset-bottom)) + 56px);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: calc(100vw - 32px);
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--glass);
+  backdrop-filter: blur(10px);
+  color: var(--snow);
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.music.on { border-color: var(--gold); color: var(--gold); }
+.music .label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.music:focus-visible { outline: 2px solid var(--snow); outline-offset: 3px; }
+@media (max-width: 640px) {
+  .music .label { display: inline; }
+  .chip .label { display: none; }
+}
