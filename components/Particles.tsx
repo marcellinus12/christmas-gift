@@ -1,16 +1,27 @@
-'use client';
+"use client";
 
-import { useEffect, useMemo, useRef } from 'react';
-import { useFrame, useThree } from '@react-three/fiber';
-import * as THREE from 'three';
-import { GPUComputationRenderer } from 'three/examples/jsm/misc/GPUComputationRenderer.js';
-import { COUNT, HEIGHT, IDLE_INDEX, WIDTH, buildAllShapes } from '@/lib/shapes';
-import { GESTURES, IDLE_LOOK } from '@/lib/meta';
-import { input } from '@/lib/input';
-import { particleFragment, particleVertex, positionShader, velocityShader } from '@/lib/shaders';
+import { useEffect, useMemo, useRef } from "react";
+import { useFrame, useThree } from "@react-three/fiber";
+import * as THREE from "three";
+import { GPUComputationRenderer } from "three/examples/jsm/misc/GPUComputationRenderer.js";
+import { COUNT, HEIGHT, IDLE_INDEX, WIDTH, buildAllShapes } from "@/lib/shapes";
+import { GESTURES, IDLE_LOOK } from "@/lib/meta";
+import { input } from "@/lib/input";
+import {
+  particleFragment,
+  particleVertex,
+  positionShader,
+  velocityShader,
+} from "@/lib/shaders";
 
 function dataTexture(data: Float32Array) {
-  const t = new THREE.DataTexture(data, WIDTH, HEIGHT, THREE.RGBAFormat, THREE.FloatType);
+  const t = new THREE.DataTexture(
+    data as unknown as BufferSource,
+    WIDTH,
+    HEIGHT,
+    THREE.RGBAFormat,
+    THREE.FloatType,
+  );
   t.minFilter = THREE.NearestFilter;
   t.magFilter = THREE.NearestFilter;
   t.needsUpdate = true;
@@ -22,7 +33,7 @@ export default function Particles() {
 
   const sim = useMemo(() => {
     const gpu = new GPUComputationRenderer(WIDTH, HEIGHT, gl);
-    if (!gl.getContext().getExtension('EXT_color_buffer_float')) {
+    if (!gl.getContext().getExtension("EXT_color_buffer_float")) {
       gpu.setDataType(THREE.HalfFloatType); // fallback for older devices
     }
 
@@ -36,8 +47,8 @@ export default function Particles() {
       pd[i * 4 + 3] = Math.random(); // per-particle seed
     }
 
-    const velVar = gpu.addVariable('textureVelocity', velocityShader, velTex);
-    const posVar = gpu.addVariable('texturePosition', positionShader, posTex);
+    const velVar = gpu.addVariable("textureVelocity", velocityShader, velTex);
+    const posVar = gpu.addVariable("texturePosition", positionShader, posTex);
     gpu.setVariableDependencies(velVar, [posVar, velVar]);
     gpu.setVariableDependencies(posVar, [posVar, velVar]);
 
@@ -69,13 +80,16 @@ export default function Particles() {
     if (err) console.error(err);
 
     const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(COUNT * 3), 3));
+    geometry.setAttribute(
+      "position",
+      new THREE.BufferAttribute(new Float32Array(COUNT * 3), 3),
+    );
     const ref = new Float32Array(COUNT * 2);
     for (let i = 0; i < COUNT; i++) {
       ref[i * 2] = ((i % WIDTH) + 0.5) / WIDTH;
       ref[i * 2 + 1] = (Math.floor(i / WIDTH) + 0.5) / HEIGHT;
     }
-    geometry.setAttribute('reference', new THREE.BufferAttribute(ref, 2));
+    geometry.setAttribute("reference", new THREE.BufferAttribute(ref, 2));
 
     // Two layers: crisp core points + a big, faint halo layer for the glow.
     const makeMaterial = (sizeMul: number, alphaMul: number, soft: boolean) =>
@@ -156,7 +170,8 @@ export default function Particles() {
 
     // hand position -> world coordinates (z = 0)
     const cam = camera as THREE.PerspectiveCamera;
-    const vh = 2 * Math.tan(THREE.MathUtils.degToRad(cam.fov / 2)) * cam.position.z;
+    const vh =
+      2 * Math.tan(THREE.MathUtils.degToRad(cam.fov / 2)) * cam.position.z;
     const vw = vh * cam.aspect;
     // camera hand wins; otherwise mouse / touch pushes the snow the same way
     const usePointer = !input.active && input.pointerActive;
@@ -164,7 +179,10 @@ export default function Particles() {
     const ay = usePointer ? input.py : input.y;
     const hx = (ax - 0.5) * vw;
     const hy = (0.5 - ay) * vh;
-    s.hand.lerp(s.goal.set(hx, hy, 0), 1 - Math.exp(-dt * (usePointer ? 18 : 12)));
+    s.hand.lerp(
+      s.goal.set(hx, hy, 0),
+      1 - Math.exp(-dt * (usePointer ? 18 : 12)),
+    );
     if (input.active && want > 0) s.goal.set(hx * 0.3, hy * 0.3, 0);
     else s.goal.set(0, 0, 0);
     s.offset.lerp(s.goal, 1 - Math.exp(-dt * 4));
@@ -197,8 +215,16 @@ export default function Particles() {
 
   return (
     <>
-      <points geometry={sim.geometry} material={sim.halo} frustumCulled={false} />
-      <points geometry={sim.geometry} material={sim.core} frustumCulled={false} />
+      <points
+        geometry={sim.geometry}
+        material={sim.halo}
+        frustumCulled={false}
+      />
+      <points
+        geometry={sim.geometry}
+        material={sim.core}
+        frustumCulled={false}
+      />
     </>
   );
 }
